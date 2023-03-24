@@ -95,21 +95,21 @@ class Task1():
             self.x0 = self.x
             self.y0 = self.y
             #  angular_vel = linear_vel / radius
-            if current_movement >= 4*pi*0.4:
+            if current_movement >= 4*pi*0.5:
                 # 2 loops completed
                 self.shutdownhook()
-            if current_movement >= 2*pi*0.4 and loop_num==1:
+            if current_movement >= 2*pi*0.5 and loop_num==1:
                 # stop after first loop completes
                 self.vel = Twist()
                 loop_num +=1
             if loop_num==2 :
                 # next circle
                 self.vel.angular.z = -0.5
-                self.vel.linear.x = 0.2
+                self.vel.linear.x = 0.25
             else:
                 # first circle
                 self.vel.angular.z = 0.5
-                self.vel.linear.x = 0.2
+                self.vel.linear.x = 0.25
 
 
             # publish whatever velocity command has been set in your code above:
