@@ -14,7 +14,7 @@ from tf.transformations import euler_from_quaternion
 # import some useful mathematical operations (and pi), which you may find useful:
 from math import sqrt, pow, pi
 
-class Square():
+class Task1():
     def callback_function(self, topic_data: Odometry):
         # obtain relevant topic data: pose (position and orientation):
         pose = topic_data.pose.pose
@@ -51,13 +51,9 @@ class Square():
             self.theta_z0 = self.theta_z
 
     def __init__(self):
-        node_name = "move_square"
+        node_name = "task1"
         # a flag if this node has just been launched
         self.startup = True
-
-        # This might be useful in the main_loop() (to switch between 
-        # turning and moving forwards)
-        self.turn = False
 
         # setup a '/cmd_vel' publisher and an '/odom' subscriber:
         self.pub = rospy.Publisher("cmd_vel", Twist, queue_size=10)
@@ -91,48 +87,29 @@ class Square():
         self.ctrl_c = True
 
     def main_loop(self):
-        current_yaw = 0.0
         current_movement = 0
-        count = 0
+        loop_num = 1
         while not self.ctrl_c:
-            # here is where your code would go to control the motion of your
-            # robot. Add code here to make your robot move in a square of
-            # dimensions 1 x 1m...
-
-            if count == 8:
+            dist_moved = sqrt(pow(self.x-self.x0,2)+pow(self.y-self.y0,2))
+            current_movement = current_movement + abs(dist_moved)
+            self.x0 = self.x
+            self.y0 = self.y
+            #  angular_vel = linear_vel / radius
+            if current_movement >= 4*pi*0.4:
+                # 2 loops completed
                 self.shutdownhook()
-            if self.turn:
-                # turn 90 degrees
-                current_yaw = current_yaw + abs(self.theta_z - self.theta_z0)
-                self.theta_z0 = self.theta_z
-                if current_yaw>= pi/2:
-                    # stop turning
-                    self.vel = Twist()
-                    self.turn = False
-                    current_yaw = 0.0
-                    self.x0 = self.x
-                    self.y0 = self.y 
-                else:
-                    # keep turning
-                    self.vel.angular.z = 0.2
-
+            if current_movement >= 2*pi*0.4 and loop_num==1:
+                # stop after first loop completes
+                self.vel = Twist()
+                loop_num +=1
+            if loop_num==2 :
+                # next circle
+                self.vel.angular.z = -0.5
+                self.vel.linear.x = 0.2
             else:
-                
-                # move forward by 1 meter
-                dist_moved = sqrt(pow(self.x-self.x0,2)+pow(self.y-self.y0,2))
-                current_movement = current_movement + abs(dist_moved)
-                self.x0 = self.x
-                self.y0 = self.y
-                if current_movement>= 1:
-                    # stop moving
-                    count+=1
-                    self.vel = Twist()
-                    self.turn = True
-                    current_movement = 0
-                    self.theta_z0 = self.theta_z
-                else:
-                    # keep moving
-                    self.vel.linear.x = 0.2
+                # first circle
+                self.vel.angular.z = 0.5
+                self.vel.linear.x = 0.2
 
 
             # publish whatever velocity command has been set in your code above:
@@ -141,7 +118,7 @@ class Square():
             self.rate.sleep()
 
 if __name__ == "__main__":
-    node = Square()
+    node = Task1()
     try:
         node.main_loop()
     except rospy.ROSInterruptException:
