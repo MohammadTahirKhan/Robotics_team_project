@@ -36,7 +36,7 @@ class Task1():
         # access them elsewhere within our Square() class):
         self.x = pos_x
         self.y = pos_y
-        self.theta_z = abs(yaw)
+        self.theta_z = yaw
 
         # If this is the first time that the callback_function has run
         # (e.g. the first time a message has been received), then
@@ -104,12 +104,12 @@ class Task1():
                 loop_num +=1
             if loop_num==2 :
                 # next circle
-                self.vel.angular.z = -0.5
-                self.vel.linear.x = 0.25
+                self.vel.angular.z = -0.22
+                self.vel.linear.x = 0.11
             else:
                 # first circle
-                self.vel.angular.z = 0.5
-                self.vel.linear.x = 0.25
+                self.vel.angular.z = 0.22
+                self.vel.linear.x = 0.11
 
 
             # publish whatever velocity command has been set in your code above:
