@@ -29,19 +29,10 @@ class OdomSubscriber():
         self.x = 0.0
         self.y = 0.0
         self.theta_z = 0.0
-
-        # Here we print out the initial position of the robot
-        if self.print_initial_pos:
-            print(f"x = {pos_x:.2f} [m], y = {pos_y:.2f} [m], theta_z = {yaw*(180/pi):.1f} [degrees]")
-            self.print_initial_pos = False
+        
 
         # Here we print out the live position values of the robot
-        if self.counter > 10:
-            self.counter = 0
-            print(f"x = {pos_x:.2f} [m], y = {pos_y:.2f} [m], theta_z = {yaw*(180/pi):.1f} [degrees]")
-        else:
-            self.counter += 1
-
+        
     def __init__(self):
         node_name = "odom_subscriber" # a name for our node
         rospy.init_node(node_name, anonymous=True)
