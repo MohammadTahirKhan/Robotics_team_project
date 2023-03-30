@@ -6,45 +6,52 @@ from nav_msgs.msg import Odometry
 # additionally, import the "euler_from_quaternion" function from the tf library
 # for converting the raw orientation values from the odometry message into euler angles:
 from tf.transformations import euler_from_quaternion
+from math import pi
 
 class OdomSubscriber():
 
     def callback(self, topic_data: Odometry):
-        # We're only interested in the pose part of the Odometry message,
-        # so we'll extract this bit first:
+        # extracting the pose part of the Odometry message
         pose = topic_data.pose.pose
-        # This contains information about both the "position" and "orientation"
-        # of the robot, so let's extract those two parts out next:
+        # extracting information about the "position" and "orientation" of the robot
         position = pose.position
         orientation = pose.orientation 
-        # "position" data is provided in meters, so we don't need to do any
-        # conversion on this, and can extract the relevant parts of this directly:
+        # extracting "position" data provided in meters
         pos_x = position.x
         pos_y = position.y
         pos_z = position.z
-        # "orientation" data is in quaternions, so we need to convert this 
-        # using the "euler_from_quaternion" function 
-
+        # "orientation" data is in quaternions, converting this using the 
+        # "euler_from_quaternion" function 
         (roll, pitch, yaw) = euler_from_quaternion([orientation.x, 
                      orientation.y, orientation.z, orientation.w], 
                      'sxyz')
 
-        # Here we print out the values that we're interested in:
+        self.x = 0.0
+        self.y = 0.0
+        self.theta_z = 0.0
+
+        # Here we print out the initial position of the robot
+        if self.print_initial_pos:
+            print(f"x = {pos_x:.2f} [m], y = {pos_y:.2f} [m], theta_z = {yaw*(180/pi):.1f} [degrees]")
+            self.print_initial_pos = False
+
+        # Here we print out the live position values of the robot
         if self.counter > 10:
             self.counter = 0
-            print(f"x = {pos_x:.3f} (m), y = {pos_y:.3f} (m), theta_z = {yaw} (radians)")
+            print(f"x = {pos_x:.2f} [m], y = {pos_y:.2f} [m], theta_z = {yaw*(180/pi):.1f} [degrees]")
         else:
             self.counter += 1
 
     def __init__(self):
-        node_name = "odom_subscriber" # a name for our node (we can call it anything we like)
+        node_name = "odom_subscriber" # a name for our node
         rospy.init_node(node_name, anonymous=True)
         # When setting up the subscriber, the "odom" topic needs to be specified
         # and the message type (Odometry) needs to be provided
         self.sub = rospy.Subscriber("odom", Odometry, self.callback)
         # an optional status message:
         rospy.loginfo(f"The '{node_name}' node is active...")
-        
+
+        self.print_initial_pos = True
         self.counter = 0      
 
     def main_loop(self):

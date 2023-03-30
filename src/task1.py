@@ -11,7 +11,7 @@ from nav_msgs.msg import Odometry
 # import the function to convert orientation from quaternions to angles:
 from tf.transformations import euler_from_quaternion
 
-# import some useful mathematical operations (and pi), which you may find useful:
+# import some useful mathematical operations (and pi):
 from math import sqrt, pow, pi
 
 class Task1():
@@ -25,15 +25,14 @@ class Task1():
         pos_x = position.x
         pos_y = position.y
 
-        # convert orientation co-ords to roll, pitch & yaw 
-        # (theta_x, theta_y, theta_z):
+        # convert orientation co-ords to roll, pitch & yaw (theta_x, theta_y, theta_z)
+        # using the "euler_from_quaternion" function:
         (roll, pitch, yaw) = euler_from_quaternion(
             [orientation.x, orientation.y, orientation.z, orientation.w], "sxyz"
         )
 
         # We're only interested in x, y and theta_z
-        # so assign these to class variables (so that we can
-        # access them elsewhere within our Square() class):
+        # so assign these to class variables:
         self.x = pos_x
         self.y = pos_y
         self.theta_z = yaw
@@ -49,11 +48,21 @@ class Task1():
             self.x0 = self.x
             self.y0 = self.y
             self.theta_z0 = self.theta_z
+            # print initial position
+            print(f"x = {pos_x:.2f} [m], y = {pos_y:.2f} [m], theta_z = {yaw*(180/pi):.1f} [degrees]")
+
+        # Here we print out the live position values of the robot
+        if self.counter>10 :
+            self.counter = 0
+            print(f"x = {pos_x:.2f} [m], y = {pos_y:.2f} [m], theta_z = {yaw*(180/pi):.1f} [degrees]")
+        else:
+            self.counter += 1
 
     def __init__(self):
         node_name = "task1"
         # a flag if this node has just been launched
         self.startup = True
+        self.counter = 0
 
         # setup a '/cmd_vel' publisher and an '/odom' subscriber:
         self.pub = rospy.Publisher("cmd_vel", Twist, queue_size=10)
@@ -94,25 +103,26 @@ class Task1():
             current_movement = current_movement + abs(dist_moved)
             self.x0 = self.x
             self.y0 = self.y
-            #  angular_vel = linear_vel / radius
+
             if current_movement >= 4*pi*0.5:
-                # 2 loops completed
+                # 2 loops completed, stop the robot
                 self.shutdownhook()
+
             if current_movement >= 2*pi*0.5 and loop_num==1:
-                # stop after first loop completes
+                # stop after first loop completes, getting started for the next loop
                 self.vel = Twist()
                 loop_num +=1
+
             if loop_num==2 :
-                # next circle
+                # second loop
                 self.vel.angular.z = -0.22
                 self.vel.linear.x = 0.11
             else:
-                # first circle
+                # first loop
                 self.vel.angular.z = 0.22
                 self.vel.linear.x = 0.11
 
-
-            # publish whatever velocity command has been set in your code above:
+            # publish velocity command that has been set in your code above:
             self.pub.publish(self.vel)
             # maintain the loop rate @ 10 hz
             self.rate.sleep()
