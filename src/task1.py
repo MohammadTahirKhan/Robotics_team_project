@@ -88,6 +88,7 @@ class Task1():
     def main_loop(self):
         current_movement = 0
         loop_num = 1
+        print_count = 0
         while not self.ctrl_c:
             
             dist_moved = sqrt(pow(self.x-self.x0,2)+pow(self.y-self.y0,2))
@@ -117,8 +118,10 @@ class Task1():
                 self.vel.angular.z = 2*pi/30
                 self.vel.linear.x = pi/30
             
-            print(f"x = {self.x:.2f} [m], y = {self.y:.2f} [m], theta_z = {self.theta_z*(180/pi):.1f} [degrees]")
+            if print_count%10==0:
+                print(f"x={self.x:.2f} [m], y={self.y:.2f} [m], yaw={self.theta_z*(180/pi):.1f} [degrees].")
 
+            print_count+=1
             # publish velocity command that has been set in your code above:
             self.pub.publish(self.vel)
             # maintain the loop rate @ 1 hz
