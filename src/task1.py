@@ -12,7 +12,7 @@ from nav_msgs.msg import Odometry
 from tf.transformations import euler_from_quaternion
 
 # import some useful mathematical operations (and pi):
-from math import sqrt, pow, pi
+from math import pi
 
 class Task1():
     def callback_function(self, topic_data: Odometry):
@@ -33,9 +33,11 @@ class Task1():
 
         # We're only interested in x, y and theta_z
         # so assign these to class variables:
-        self.x = pos_x
-        self.y = pos_y
-        self.theta_z = yaw
+        self.x = pos_x 
+        self.y = pos_y 
+        self.theta_z = abs(yaw)
+        # make the initial yaw and the later yaw positions relative to zero
+        self.theta_z = self.theta_z - self.initial_yaw
 
         # If this is the first time that the callback_function has run
         # (e.g. the first time a message has been received), then
@@ -48,13 +50,16 @@ class Task1():
             self.x0 = self.x
             self.y0 = self.y
             self.theta_z0 = self.theta_z
+            self.initial_yaw = self.theta_z
 
-
+        
 
     def __init__(self):
         node_name = "task1"
         # a flag if this node has just been launched
         self.startup = True
+        # initial yaw of the robot, later used to change the starting yaw to zero if not already
+        self.initial_yaw = 0.0
         # setup a '/cmd_vel' publisher and an '/odom' subscriber:
         self.pub = rospy.Publisher("cmd_vel", Twist, queue_size=10)
         self.sub = rospy.Subscriber("odom", Odometry, self.callback_function)
@@ -73,7 +78,6 @@ class Task1():
         self.theta_z0 = 0.0
         # define a Twist message instance, to set robot velocities
         self.vel = Twist()
-
         self.ctrl_c = False
         rospy.on_shutdown(self.shutdownhook)
 
@@ -86,22 +90,20 @@ class Task1():
         self.ctrl_c = True
 
     def main_loop(self):
-        current_movement = 0
+        current_yaw = 0
         loop_num = 1
         print_count = 0
+        print_yaw = 0.0
         while not self.ctrl_c:
-            
-            dist_moved = sqrt(pow(self.x-self.x0,2)+pow(self.y-self.y0,2))
-            current_movement = current_movement + abs(dist_moved)
-            self.x0 = self.x
-            self.y0 = self.y
+            current_yaw = current_yaw + abs(self.theta_z - self.theta_z0 )
+            self.theta_z0 = self.theta_z
 
-            if current_movement >= 2*pi*0.5 and loop_num==1:
+            if current_yaw >= 2*pi and loop_num==1:
                 # stop after first loop completes, getting started for the next loop
                 self.vel = Twist()
                 loop_num +=1
 
-            if current_movement >= 4*pi*0.5:
+            if current_yaw >= 4*pi:
                 # 2 loops completed, stop the robot
                 self.shutdownhook()
 
@@ -118,13 +120,26 @@ class Task1():
                 self.vel.angular.z = 2*pi/30
                 self.vel.linear.x = pi/30
             
+            # print at the speed of 1 hz
             if print_count%10==0:
-                print(f"x={self.x:.2f} [m], y={self.y:.2f} [m], yaw={self.theta_z*(180/pi):.1f} [degrees].")
+                if current_yaw > 3*pi:
+                    # +180 to 0 degrees
+                    print_yaw = 4*pi - current_yaw
+                elif current_yaw > 2*pi:
+                    # 0 to -180 degrees
+                    print_yaw = 2*pi - current_yaw
+                elif current_yaw > pi:
+                    # -180 to 0 degrees
+                    print_yaw = current_yaw - 2*pi
+                else:
+                    # 0 to 180 degrees
+                    print_yaw = current_yaw
+                print(f"x={self.x-self.x0:.2f} [m], y={self.y-self.y0:.2f} [m], yaw={print_yaw*180/pi:.1f} [degrees].")
 
             print_count+=1
             # publish velocity command that has been set in your code above:
             self.pub.publish(self.vel)
-            # maintain the loop rate @ 1 hz
+            # maintain the loop rate @ 10 hz
             self.rate.sleep()
 
 if __name__ == "__main__":
