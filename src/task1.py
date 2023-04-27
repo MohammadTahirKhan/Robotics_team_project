@@ -109,7 +109,7 @@ class Task1():
 
             if loop_num==2 :
                 # second loop,
-                # angular velocity is negative now to change the direction to clockwise
+                # angular velocity is negative now, to change the direction to clockwise
                 self.vel.angular.z = -2*pi/30
                 self.vel.linear.x = pi/30
             else:
@@ -122,6 +122,7 @@ class Task1():
             
             # print at the speed of 1 hz
             if print_count%10==0:
+                # current yaw to print
                 if current_yaw > 3*pi:
                     # +180 to 0 degrees
                     print_yaw = 4*pi - current_yaw
@@ -137,7 +138,7 @@ class Task1():
                 print(f"x={self.x-self.x0:.2f} [m], y={self.y-self.y0:.2f} [m], yaw={print_yaw*180/pi:.1f} [degrees].")
 
             print_count+=1
-            # publish velocity command that has been set in your code above:
+            # publish velocity command that has been set in code above:
             self.pub.publish(self.vel)
             # maintain the loop rate @ 10 hz
             self.rate.sleep()
