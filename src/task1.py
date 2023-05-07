@@ -98,7 +98,7 @@ class Task1():
             current_yaw = current_yaw + abs(self.theta_z - self.theta_z0 )
             self.theta_z0 = self.theta_z
 
-            if current_yaw >= 2*pi and loop_num==1:
+            if (current_yaw >= (71*pi)/36) and loop_num==1:
                 # stop after first loop completes, getting started for the next loop
                 self.vel = Twist()
                 loop_num +=1
