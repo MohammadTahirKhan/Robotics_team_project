@@ -1,0 +1,4 @@
+<launch>
+  <node name="task2"    pkg="task2"  type="status_subscriber_node.py" output="screen">
+  </node>
+</launch>
