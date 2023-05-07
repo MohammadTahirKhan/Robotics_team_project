@@ -54,57 +54,58 @@ class Task3:
         
 
     def scan_callback(self, scan_data):
-        left_arc = scan_data.ranges[0:21]
-        right_arc = scan_data.ranges[-20:]
+        left_arc = scan_data.ranges[0:20]
+        right_arc = scan_data.ranges[-21:]
         front_arc = np.array(left_arc[::-1] + right_arc[::-1])
+        left = scan_data.ranges[70:110]
+        right = scan_data.ranges[250:290]
+        front_left = scan_data.ranges[0:60]
+        front_right = scan_data.ranges[-60:0]
+        whole_front = np.array(front_left[::-1] + front_right[::-1])
         self.min_dis_front = front_arc.min()
-        self.max_dis_front = front_arc.max()
-        self.min_dis_left = np.array(left_arc).min()
-        self.min_dis_right = np.array(right_arc).min()
+        self.max_dis_front = whole_front.max()
+        self.min_dis_left = np.array(left).min()
+        self.min_dis_right = np.array(right).min()
 
-        # if self.min_dis_front <= 0.5:
-        #     if self.min_dis_right > 0.3:
-        #         self.turn_direction = "right"
-        #     elif self.max_dis_front < 0.6:
-        #         self.turn_direction = "uTurn"
-        #     else:
-        #         self.turn_direction = "left"
-        # else:
-        #     # if self.min_dis_right < 0.25:
-        #     #     self.turn_direction = "right"
-        #     # else:
-        #     self.turn_direction = "forward"
+        print("l",self.min_dis_left)
+        print("f",self.min_dis_front)
+        print("r",self.min_dis_right)
 
-        # if self.min_dis_front > 0.5:
-        #     self.turn_direction = "forward"
-        if self.min_dis_left <= 0.5:
-            if self.min_dis_front <=0.5:
+        # works better but still wrong
+        if self.min_dis_front <= 0.42:
+            # if self.min_dis_left <0.2 or self.min_dis_right <0.2:
+            #     self.turn_direction = "reverse"
+            if self.min_dis_right > 0.38:
+                self.vel= Twist()
                 self.turn_direction = "right"
+            elif self.min_dis_left > 0.38:
+                self.vel= Twist()
+                self.turn_direction = "left"
             else:
-                self.turn_direction = "forward"
-        else:
-            self.turn_direction = "left"
-            
+                self.vel= Twist()
+                self.turn_direction = "uturn"
+        else :
+            self.vel= Twist()
+            self.turn_direction = "forward"
 
-    # def scan_callback(self, scan_data):
-    #     left_arc = scan_data.ranges[220:400]
-    #     right_arc = scan_data.ranges[0:140]
-    #     front_arc = np.array(left_arc[::-1] + right_arc[::-1])
-    #     self.min_dis_front = front_arc.min()
-    #     self.min_dis_left = np.array(left_arc).min()
-    #     self.min_dis_right = np.array(right_arc).min()
-    #     self.max_dis_front = np.array(front_arc[0:50]).max()
         
-    #     if self.min_dis_left > 0.5:
-    #         # Too far away from the wall on the left, need to turn left
-    #         self.turn_direction = "left"
-    #     elif self.min_dis_left < 0.3:
-    #         # Too close to the wall on the left, need to turn right
-    #         self.turn_direction = 'right'
-    #     elif self.min_dis_front < 0.25:
-    #         # Obstacle in front, need to turn right
-    #         self.turn_direction = 'right
+        # other method (still does not work)
+        # if self.min_dis_left > 0.3:
+        #     self.vel= Twist()
+        #     self.turn_direction = "left"
+        # elif self.min_dis_front <= 0.42:
+        #     if self.min_dis_right > 0.3:
+        #         self.vel= Twist()
+        #         self.turn_direction = "right"
+        #     elif self.min_dis_left <= 0.38:
+        #         self.turn_direction = "uturn"
+        # else:
+        #     self.turn_direction = "forward"
+        
 
+
+        print(self.turn_direction)
+            
     
     def __init__(self):
         node_name = "task3"
@@ -151,21 +152,30 @@ class Task3:
         while not rospy.is_shutdown():
             current_yaw = current_yaw + abs(self.theta_z - self.theta_z0 )
             self.theta_z0 = self.theta_z
-            if self.turn_direction == "left":
-                if current_yaw <= pi/2 :
-                    self.vel.angular.z = 0.5
-                else:
-                    self.vel = Twist()
-                    # current_yaw = 0
-                    # self.vel.linear.x = 0.2
-                    self.turn_direction = "forward"
+            # if self.turn_direction == "left":
+            #     if current_yaw <= pi/2 :
+            #         self.vel.angular.z = 0.5
+            #     else:
+            #         self.vel = Twist()
+            #         # current_yaw = 0
+            #         # self.vel.linear.x = 0.2
+            #         self.turn_direction = "forward"
             
             if self.turn_direction == "forward":
                 self.vel.linear.x = 0.3
                 self.vel.angular.z = 0
+            elif self.turn_direction == "left":
+                self.vel.linear.x = 0
+                self.vel.angular.z = 0.5
             elif self.turn_direction == "right":
                 self.vel.linear.x = 0
                 self.vel.angular.z = -0.5
+            elif self.turn_direction == "uturn":
+                self.vel.linear.x = 0
+                self.vel.angular.z = -0.5
+            elif self.turn_direction == "reverse":
+                self.vel.linear.x = -0.1
+                self.vel.angular.z = 0
             else:
                 self.vel.linear.x = 0
                 self.vel.angular.z = 0
