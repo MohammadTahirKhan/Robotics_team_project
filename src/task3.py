@@ -42,7 +42,13 @@ class Task3:
         self.y = pos_y 
         self.theta_z = yaw
 
-
+        if self.startup:
+            # don't initialise again:
+            self.startup = False
+            # set the reference position:
+            self.x0 = self.x
+            self.y0 = self.y
+            self.theta_z0 = self.theta_z
 
     def scan_callback(self, scan_data):
         left = scan_data.ranges[0:20]
@@ -81,6 +87,10 @@ class Task3:
         self.x = 0.0
         self.y = 0.0
         self.theta_z = 0.0
+        # variables for a "reference position":
+        self.x0 = 0.0
+        self.y0 = 0.0
+        self.theta_z0 = 0.0
 
         self.absolute_right = 0
         self.absolute_left = 0
@@ -88,6 +98,7 @@ class Task3:
         self.right_arc = 0
         self.left_arc = 0
         self.wall_count = 0
+        self.current_yaw = 0
 
         
         # define a Twist message instance, to set robot velocities
@@ -109,17 +120,27 @@ class Task3:
         rospy.sleep(3)
 
     def turn_right(self):
+        self.current_yaw = self.current_yaw + abs(self.theta_z - self.theta_z0 )
+        self.theta_z0 = self.theta_z
         self.vel.linear.x = 0
         self.vel.angular.z = -0.6
         self.pub.publish(self.vel)
+        if self.current_yaw >= math.pi/2:
+            self.vel = Twist()
+            self.current_yaw = 0
         rospy.sleep(2.5)
         self.vel = Twist()
         rospy.sleep(0.5)
 
     def turn_left(self):
+        self.current_yaw = self.current_yaw + abs(self.theta_z - self.theta_z0 )
+        self.theta_z0 = self.theta_z
         self.vel.linear.x = 0
         self.vel.angular.z = 0.6
         self.pub.publish(self.vel)
+        if self.current_yaw >= math.pi/2:
+            self.vel = Twist()
+            self.current_yaw = 0
         rospy.sleep(2.5)
         self.vel = Twist()
         rospy.sleep(0.5)
@@ -134,7 +155,7 @@ class Task3:
             self.vel.angular.z = 0.3
             self.pub.publish(self.vel)
         else:
-            if self.min_dis_front<0.6:
+            if self.min_dis_front<0.7:
                 self.vel.linear.x = 0.2
                 self.vel.angular.z = 0.0
                 self.pub.publish(self.vel)
