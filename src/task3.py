@@ -125,6 +125,10 @@ class Task3:
         self.vel.linear.x = 0
         self.vel.angular.z = -0.6
         self.pub.publish(self.vel)
+        if self.absolute_left > 0.35:
+            self.vel.linear.x = 0
+            self.vel.angular.z = -0.3
+            self.pub.publish(self.vel)
         if self.current_yaw >= math.pi/2:
             self.vel = Twist()
             self.current_yaw = 0
@@ -138,6 +142,10 @@ class Task3:
         self.vel.linear.x = 0
         self.vel.angular.z = 0.6
         self.pub.publish(self.vel)
+        if self.absolute_right > 0.35:
+            self.vel.linear.x = 0
+            self.vel.angular.z = 0.3
+            self.pub.publish(self.vel)
         if self.current_yaw >= math.pi/2:
             self.vel = Twist()
             self.current_yaw = 0
@@ -156,11 +164,11 @@ class Task3:
             self.pub.publish(self.vel)
         else:
             if self.min_dis_front<0.7:
-                self.vel.linear.x = 0.2
+                self.vel.linear.x = 0.16
                 self.vel.angular.z = 0.0
                 self.pub.publish(self.vel)
             else :
-                self.vel.linear.x = 0.25
+                self.vel.linear.x = 0.26
                 self.vel.angular.z = 0.0
                 self.pub.publish(self.vel)
 
@@ -178,7 +186,7 @@ class Task3:
                     self.vel= Twist()
                     rospy.sleep(0.5) 
                     self.turn_left()
-                elif self.absolute_left >= 0.5 and self.absolute_right >= 0.5:
+                elif self.absolute_left >= 0.65 and self.absolute_right >= 0.65:
                 # else:
                     if self.wall_count == 0:
                         self.vel= Twist()
