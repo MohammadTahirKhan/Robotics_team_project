@@ -59,8 +59,8 @@ class Task3:
 
         left_arc = scan_data.ranges[30:50]
         right_arc = scan_data.ranges[-50:-30]
-        self.left_arc = np.array(left_arc).min()
-        self.right_arc = np.array(right_arc).min()
+        self.left_arc_dis = np.array(left_arc).min()
+        self.right_arc_dis = np.array(right_arc).min()
 
         self.absolute_left = scan_data.ranges[90]
         self.absolute_right = scan_data.ranges[-90]
@@ -95,8 +95,8 @@ class Task3:
         self.absolute_right = 0
         self.absolute_left = 0
         self.absolute_front = 0
-        self.right_arc = 0
-        self.left_arc = 0
+        self.right_arc_dis = 0
+        self.left_arc_dis = 0
         self.wall_count = 0
         self.current_yaw = 0
 
@@ -154,11 +154,11 @@ class Task3:
         rospy.sleep(0.5)
         
     def fix_position(self):
-        if self.left_arc < 0.3:
+        if self.left_arc_dis < 0.3:
             self.vel.linear.x = 0
             self.vel.angular.z = -0.3
             self.pub.publish(self.vel)
-        elif self.right_arc < 0.3:
+        elif self.right_arc_dis < 0.3:
             self.vel.linear.x = 0
             self.vel.angular.z = 0.3
             self.pub.publish(self.vel)
