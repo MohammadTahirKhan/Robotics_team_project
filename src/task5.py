@@ -242,7 +242,7 @@ class Task5:
                     self.pic = True
                     save_image(self.cv_img, self.base_image_path)
             
-            if counter < 1800:
+            if counter < 100 or self.ctrl_c == True:
                 counter+=1
             else:
                 self.vel = Twist()
@@ -273,7 +273,7 @@ class Task5:
             r.sleep()
 
 def save_image(img, base_image_path): 
-    image_path = base_image_path.joinpath("beacon.jpg")
+    image_path = base_image_path.joinpath("the_beacon.jpg")
     cv2.imwrite(str(image_path), img) 
     print(f"Saved an image to '{image_path}'\n"
         f"image dims = {img.shape[0]}x{img.shape[1]}px\n"
