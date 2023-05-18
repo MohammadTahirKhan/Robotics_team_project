@@ -1,15 +1,12 @@
 #!/usr/bin/env python3
 
-# Import the core Python modules for ROS and to implement ROS Actions:
 import argparse
-from math import pi
-from pathlib import Path
-import string
-import numpy as np
 import rospy
-import actionlib
+import numpy as np
+from math import pi
+from pathlib import Path 
+import roslaunch
 
-# Import some image processing modules:
 import cv2
 from cv_bridge import CvBridge, CvBridgeError
 
@@ -23,39 +20,44 @@ from sensor_msgs.msg import LaserScan
 class Task5:
     def __init__(self):
         self.node_name ="task5"
-        self.map_path = "/home/student/catkin_ws/src/com2009_team46/maps/task5_map"
+        self.map_path = Path.home().joinpath("catkin_ws/src/com2009_team46/maps/task5_map")
+        
         cli = argparse.ArgumentParser(description=f"Command-line interface for the '{self.node_name}' node.")
-        cli.add_argument("colour", metavar="COL", default="Black",help="The name of a colour(Blue/Red/Yellow?Green)")
+        cli.add_argument("colour", metavar="COL", default="red",help="The name of a colour to search for."
+        )
 
         args, self.colour = cli.parse_known_args(rospy.myargv()[1:])
         rospy.init_node('task5',anonymous=True)
+
+        self.camera_subscriber = rospy.Subscriber("/camera/rgb/image_raw", Image, self.camera_callback)
+        self.cvbridge = CvBridge()
         
-        self.camera_sub = rospy.Subscriber("/camera/rgb/image_raw", Image, self.camera_callback)
-        self.cv_bridge = CvBridge()
-        self.scan_sub = rospy.Subscriber("/scan", LaserScan, self.scan_callback)
-        self.odom_sub = rospy.Subscriber("/odom", Odometry, self.odometry_callback)
-        self.pub = rospy.Publisher("/cmd_vel", Twist, queue_size=10)
+        self.subScan = rospy.Subscriber("/scan", LaserScan, self.scan_callback)
+        rospy.Subscriber('/odom', Odometry, self.odometry_callback)
+
+        self.pub = rospy.Publisher("cmd_vel", Twist, queue_size=10)
         self.vel = Twist()
-        
-        self.lower_colour = (100, 200, 100)
-        self.upper_colour = (100, 255, 255)
-        
-        if self.colour[0] == "red":
-            self.lower_colour = np.array([0, 100, 100])
-            self.upper_colour = np.array([10, 255, 255])
-        elif self.colour[0] == "green":
-            self.lower_colour = np.array([50, 100, 100])
-            self.upper_colour = np.array([70, 255, 255])
-        elif self.colour[0] == "blue":
-            self.lower_colour = np.array([110, 100, 100])
-            self.upper_colour = np.array([130, 255, 255])
+
+        self.lower_colour = (0,0,0)
+        self.upper_colour = (255,255,255)
+        rospy.on_shutdown(self.shutdownhook)
+
+        if self.colour[0] == "blue":
+            self.lower_colour = (115, 50, 100)
+            self.upper_colour = (160, 255, 255)
+        elif self.colour[0] == "red":
+            self.lower_colour = (0, 50, 100)
+            self.upper_colour = (10, 255, 255)
         elif self.colour[0] == "yellow":
-            self.lower_colour = np.array([20, 100, 100])
-            self.upper_colour = np.array([40, 255, 255])
+            self.lower_colour = (25,50,100)
+            self.upper_colour = (40,255,255)
+        elif self.colour[0] == "green":
+            self.lower_colour = (50, 70, 100)
+            self.upper_colour = (70, 255, 255)
         else:
-            rospy.loginfo("Invalid colour")
-        
-        # define the robot pose variables and initialise them to zero:
+            print("Invalid Colour")
+            
+         # define the robot pose variables and initialise them to zero:
         self.x = 0.0
         self.y = 0.0
         self.theta_z = 0.0
@@ -64,6 +66,8 @@ class Task5:
         self.y0 = 0.0
         self.theta_z0 = 0.0
 
+        self.ctrl_c = False
+        rospy.on_shutdown(self.shutdownhook)
         self.absolute_right = 0
         self.absolute_left = 0
         self.absolute_front = 0
@@ -77,9 +81,8 @@ class Task5:
         self.m00_min = 10000
         self.base_image_path = Path.home().joinpath("/home/student/catkin_ws/src/com2009_team46/pictures/")
         self.base_image_path.mkdir(parents=True, exist_ok=True) 
-        
-        self.ctrl_c = False
-        rospy.on_shutdown(self.shutdownhook)
+        self.launch = roslaunch.scriptapi.ROSLaunch()
+        self.launch.start()
 
         rospy.loginfo(f"the {self.node_name} node has been initialised...")
         rospy.loginfo(f"TASK 5 BEACON: The target is {self.colour[0]}.")
@@ -87,27 +90,25 @@ class Task5:
 
     def shutdownhook(self):
         self.pub.publish(Twist())
-        
         cv2.destroyAllWindows()
         self.ctrl_c = True
-        
-    def camera_callback(self, msg):
+
+    def camera_callback(self, img_data):
         try:
-            cv_img = self.cv_bridge.imgmsg_to_cv2(msg, desired_encoding="bgr8")
+            self.cv_img = self.cvbridge.imgmsg_to_cv2(img_data, desired_encoding="bgr8")
         except CvBridgeError as e:
             print(e)
         
-        height, width, _ = cv_img.shape
+        height, width, _ = self.cv_img.shape
         crop_width = width - 800
-        crop_height = 400
+        crop_height = 100
         crop_x = int((width/2) - (crop_width/2))
         crop_y = int((height/2) - (crop_height/2))
 
-        crop_img = cv_img[crop_y:crop_y+crop_height, crop_x:crop_x+crop_width]
+        crop_img = self.cv_img[crop_y+20:crop_y+crop_height+20, crop_x:crop_x+crop_width]
         hsv_img = cv2.cvtColor(crop_img, cv2.COLOR_BGR2HSV)
 
-            
-        mask = cv2.inRange(hsv_img, self.lower_colour, self.upper_colour)
+        mask = cv2.inRange(hsv_img,self.lower_colour, self.upper_colour)
         res = cv2.bitwise_and(crop_img, crop_img, mask = mask)
 
         m = cv2.moments(mask)
@@ -119,8 +120,7 @@ class Task5:
         
         cv2.imshow('cropped image', crop_img)
         cv2.waitKey(1)
-            
-    
+
     def scan_callback(self, scan_data):
         left = scan_data.ranges[0:20]
         right = scan_data.ranges[-21:]
@@ -171,12 +171,12 @@ class Task5:
             self.y0 = self.y
             self.theta_z0 = self.theta_z
     
-    def start(self):
-        rospy.sleep(1)
-        self.vel.linear.x = 0.25
-        self.vel.angular.z = 0.0
-        self.pub.publish(self.vel)
-        rospy.sleep(3)
+    # def start(self):
+    #     rospy.sleep(1)
+    #     self.vel.linear.x = 0.25
+    #     self.vel.angular.z = 0.0
+    #     self.pub.publish(self.vel)
+    #     rospy.sleep(3)
 
     def turn_right(self):
         self.current_yaw = self.current_yaw + abs(self.theta_z - self.theta_z0 )
@@ -231,26 +231,28 @@ class Task5:
                 self.vel.angular.z = 0.0
                 self.pub.publish(self.vel)
 
-    def save_image(self, cv_img, base_image_path):
-        # save the image:
-        image_path = base_image_path.joinpath("/beacon.jpg")
-        cv2.imshow('beacon', cv_img)
-        cv2.imwrite(str(image_path), cv_img)
-        # increment the image counter:
-        self.image_counter += 1
-        # print a message to the console:
-        print("Saved image " + image_path)
-        
-            
+
     def main_loop(self):
-        self.start()
         r = rospy.Rate(10)
+        counter = 0
         while not rospy.is_shutdown():
             
             if self.m00 > self.m00_min:
                 if (self.pic == False):
                     self.pic = True
-                    self.save_image(self.cv_img, self.base_image_path)
+                    save_image(self.cv_img, self.base_image_path)
+            
+            if counter < 1800:
+                counter+=1
+            else:
+                self.vel = Twist()
+                
+                print(f"Saving map at time {rospy.get_time()}")
+                node = roslaunch.core.Node(package="map_server",
+                           node_type="map_saver",
+                           args=f"-f {self.map_path}")
+                self.launch.launch(node)
+                counter = 0
             
             if self.absolute_front<0.45:
                 if self.absolute_left < 0.5 :
@@ -269,7 +271,13 @@ class Task5:
                 self.fix_position()
             self.pub.publish(self.vel)
             r.sleep()
-        
+
+def save_image(img, base_image_path): 
+    image_path = base_image_path.joinpath("beacon.jpg")
+    cv2.imwrite(str(image_path), img) 
+    print(f"Saved an image to '{image_path}'\n"
+        f"image dims = {img.shape[0]}x{img.shape[1]}px\n"
+        f"file size = {image_path.stat().st_size} bytes") 
 
 if __name__ == "__main__":
     node = Task5()
