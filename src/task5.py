@@ -79,7 +79,7 @@ class Task5:
         self.pic = False
         self.m00 = 0
         self.m00_min = 10000
-        self.base_image_path = Path.home().joinpath("/home/student/catkin_ws/src/com2009_team46/pictures/")
+        self.base_image_path = Path.home().joinpath("/home/student/catkin_ws/src/com2009_team46/snaps/")
         self.base_image_path.mkdir(parents=True, exist_ok=True) 
         self.launch = roslaunch.scriptapi.ROSLaunch()
         self.launch.start()
