@@ -43,17 +43,17 @@ class Task5:
         rospy.on_shutdown(self.shutdownhook)
 
         if self.colour[0] == "blue":
-            self.lower_colour = (115, 50, 100)
-            self.upper_colour = (160, 255, 255)
+            self.lower_colour = (105, 50, 100)
+            self.upper_colour = (125, 100, 255)
         elif self.colour[0] == "red":
-            self.lower_colour = (0, 50, 100)
-            self.upper_colour = (10, 255, 255)
+            self.lower_colour = (150, 50, 100)
+            self.upper_colour = (175, 225, 255)
         elif self.colour[0] == "yellow":
-            self.lower_colour = (25,50,100)
-            self.upper_colour = (40,255,255)
+            self.lower_colour = (10,50,100)
+            self.upper_colour = (20,255,255)
         elif self.colour[0] == "green":
-            self.lower_colour = (50, 70, 100)
-            self.upper_colour = (70, 255, 255)
+            self.lower_colour = (87, 100, 100)
+            self.upper_colour = (100, 255, 255)
         else:
             print("Invalid Colour")
             
