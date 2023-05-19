@@ -272,12 +272,12 @@ class Task5:
             self.pub.publish(self.vel)
             r.sleep()
 
-    def save_image(img, base_image_path): 
-        image_path = base_image_path.joinpath("the_beacon.jpg")
-        cv2.imwrite(str(image_path), img) 
-        print(f"Saved an image to '{image_path}'\n"
-            f"image dims = {img.shape[0]}x{img.shape[1]}px\n"
-            f"file size = {image_path.stat().st_size} bytes") 
+def save_image(img, base_image_path): 
+    image_path = base_image_path.joinpath("the_beacon.jpg")
+    cv2.imwrite(str(image_path), img) 
+    print(f"Saved an image to '{image_path}'\n"
+        f"image dims = {img.shape[0]}x{img.shape[1]}px\n"
+        f"file size = {image_path.stat().st_size} bytes") 
 
 if __name__ == "__main__":
     node = Task5()
