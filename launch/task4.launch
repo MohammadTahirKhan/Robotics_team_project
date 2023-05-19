@@ -1,0 +1,4 @@
+<launch>
+  <node pkg="com2009_team46" type="task4.py" name="task4" output="screen">
+  </node>
+</launch>
