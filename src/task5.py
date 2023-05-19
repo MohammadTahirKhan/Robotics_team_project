@@ -122,9 +122,9 @@ class Task5:
         cv2.waitKey(1)
 
     def scan_callback(self, scan_data):
-        left = scan_data.ranges[0:20]
-        right = scan_data.ranges[-21:]
-        front_arc = np.array(left[::-1] + right[::-1])
+        left = scan_data.ranges[0:29]
+        right = scan_data.ranges[-29:0]
+        front_arc = np.array(left[::-5] + right[::-5])
         self.min_dis_front = front_arc.min()
 
 
@@ -184,16 +184,16 @@ class Task5:
         self.vel.linear.x = 0
         self.vel.angular.z = -0.6
         self.pub.publish(self.vel)
-        if self.absolute_left > 0.35:
+        if self.absolute_left > 0.3:
             self.vel.linear.x = 0
             self.vel.angular.z = -0.3
             self.pub.publish(self.vel)
         if self.current_yaw >= pi/2:
             self.vel = Twist()
             self.current_yaw = 0
-        rospy.sleep(2.5)
+        rospy.sleep(0.1)
         self.vel = Twist()
-        rospy.sleep(0.5)
+        rospy.sleep(0.1)
 
     def turn_left(self):
         self.current_yaw = self.current_yaw + abs(self.theta_z - self.theta_z0 )
@@ -201,23 +201,23 @@ class Task5:
         self.vel.linear.x = 0
         self.vel.angular.z = 0.6
         self.pub.publish(self.vel)
-        if self.absolute_right > 0.35:
+        if self.absolute_right > 0.3:
             self.vel.linear.x = 0
             self.vel.angular.z = 0.3
             self.pub.publish(self.vel)
         if self.current_yaw >= pi/2:
             self.vel = Twist()
             self.current_yaw = 0
-        rospy.sleep(2.5)
+        rospy.sleep(0.1)
         self.vel = Twist()
-        rospy.sleep(0.5)
+        rospy.sleep(0.1)
         
     def fix_position(self):
-        if self.left_arc_dis < 0.3:
+        if self.left_arc_dis < 0.3 and self.left_arc_dis > 0:
             self.vel.linear.x = 0
             self.vel.angular.z = -0.3
             self.pub.publish(self.vel)
-        elif self.right_arc_dis < 0.3:
+        elif self.right_arc_dis < 0.3 and self.right_arc_dis > 0:
             self.vel.linear.x = 0
             self.vel.angular.z = 0.3
             self.pub.publish(self.vel)
@@ -254,18 +254,18 @@ class Task5:
                 self.launch.launch(node)
                 counter = 0
             
-            if self.absolute_front<0.45:
-                if self.absolute_left < 0.5 :
+            if self.absolute_front < 0.3 and self.absolute_front > 0:
+                if self.absolute_left < 0.3 and self.absolute_left > 0:
                     self.vel= Twist()
-                    rospy.sleep(0.5)
+                    rospy.sleep(0.1)
                     self.turn_right()
-                elif self.absolute_right < 0.5 :
+                elif self.absolute_right < 0.3 and self.absolute_right > 0:
                     self.vel= Twist()
-                    rospy.sleep(0.5) 
+                    rospy.sleep(0.1) 
                     self.turn_left()
                 else:
                         self.vel= Twist()
-                        rospy.sleep(0.5) 
+                        rospy.sleep(0.1) 
                         self.turn_left()
             else :
                 self.fix_position()
