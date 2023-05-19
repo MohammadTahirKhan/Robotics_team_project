@@ -21,12 +21,6 @@ from sensor_msgs.msg import LaserScan
 class Task4:
     def __init__(self):
         self.node_name ="task4"
-        
-        # cli = argparse.ArgumentParser(description=f"Command-line interface for the '{self.node_name}' node.")
-        # cli.add_argument("colour", metavar="COL", default="red",help="The name of a colour to search for."
-        # )
-
-        # args, self.colour = cli.parse_known_args(rospy.myargv()[1:])
         rospy.init_node('task4',anonymous=True)
 
         self.camera_subscriber = rospy.Subscriber("/camera/rgb/image_raw", Image, self.camera_callback)
@@ -40,26 +34,22 @@ class Task4:
 
         self.lower_colour = (0,0,0)
         self.upper_colour = (255,255,255)
-        self.colour_array = [[[115,50,100],[160,255,255]],[[0,50,100],[10,255,255]],[[25,50,100],[40,255,255]],[[50,70,100],[70,255,255]],[[75,100,100],[95,255,255]],[[130,50,100],[170,255,255]]]
+        self.blue_lower = (115, 50, 100)
+        self.blue_upper = (130, 255, 255)
+        self.red_lower = (0, 50, 100)
+        self.red_upper = (10, 255, 255)
+        self.yellow_lower = (25,50,100)
+        self.yellow_upper = (40, 255, 255)
+        self.green_lower = (50, 70, 100)
+        self.green_upper = (70,255,255)
+        self.tur_lower = (85, 200, 100)
+        self.tur_upper = (100, 255, 255) 
+        self.purple_lower = (145, 200, 100)
+        self.purple_upper = (165, 255, 255)
         self.start_zone_colours = ["Blue", "Red", "Yellow", "Green", "Turquoise", "Purple"]
         self.start_zone = ""
         rospy.on_shutdown(self.shutdownhook)
 
-        # if self.colour[0] == "blue":
-        #     self.lower_colour = (115, 50, 100)
-        #     self.upper_colour = (160, 255, 255)
-        # elif self.colour[0] == "red":
-        #     self.lower_colour = (0, 50, 100)
-        #     self.upper_colour = (10, 255, 255)
-        # elif self.colour[0] == "yellow":
-        #     self.lower_colour = (25,50,100)
-        #     self.upper_colour = (40,255,255)
-        # elif self.colour[0] == "green":
-        #     self.lower_colour = (50, 70, 100)
-        #     self.upper_colour = (70, 255, 255)
-        # else:
-        #     print("Invalid Colour")
-            
          # define the robot pose variables and initialise them to zero:
         self.x = 0.0
         self.y = 0.0
@@ -89,7 +79,6 @@ class Task4:
         self.launch.start()
 
         rospy.loginfo(f"the {self.node_name} node has been initialised...")
-        rospy.loginfo(f"TASK 5 BEACON: The target is {self.colour[0]}.")
         
 
     def shutdownhook(self):
@@ -104,46 +93,22 @@ class Task4:
         crop_x = int((width/2) - (crop_width/2))
         crop_y = int((height/2) - (crop_height/2))
 
-        crop_img = self.cv_img[crop_y+20:crop_y+crop_height+20, crop_x:crop_x+crop_width]
+        crop_img = cv_img[crop_y+20:crop_y+crop_height+20, crop_x:crop_x+crop_width]
         hsv_img = cv2.cvtColor(crop_img, cv2.COLOR_BGR2HSV)
 
-        mask = cv2.inRange(hsv_img,self.lower_colour, self.upper_colour)
+        mask = cv2.inRange(hsv_img, lower, upper)
         res = cv2.bitwise_and(crop_img, crop_img, mask = mask)
-
+        m00_min = 10000
         m = cv2.moments(mask)
-        self.m00 = m['m00']
-        self.cy = m['m10'] / (m['m00'] + 1e-5)
+        m00 = m['m00']
+        cy = m['m10'] / (m['m00'] + 1e-5)
 
-        if self.m00 > self.m00_min:
-            self.colour_found == True
+        if m00 > m00_min:
+            return True
         else:
-            self.colour_found == False
+            return False
 
     def camera_callback(self, img_data):
-        # try:
-        #     self.cv_img = self.cvbridge.imgmsg_to_cv2(img_data, desired_encoding="bgr8")
-        # except CvBridgeError as e:
-        #     print(e)
-        
-        # height, width, _ = self.cv_img.shape
-        # crop_width = width - 800
-        # crop_height = 100
-        # crop_x = int((width/2) - (crop_width/2))
-        # crop_y = int((height/2) - (crop_height/2))
-
-        # crop_img = self.cv_img[crop_y+20:crop_y+crop_height+20, crop_x:crop_x+crop_width]
-        # hsv_img = cv2.cvtColor(crop_img, cv2.COLOR_BGR2HSV)
-
-        # for i in range(len(self.colour_array)):
-        #     self.lower_colour = (self.colour_array[i][0][0], self.colour_array[i][0][1], self.colour_array[i][0][2])
-        #     self.upper_colour = (self.colour_array[i][1][0], self.colour_array[i][1][1], self.colour_array[i][1][2])
-        #     mask = cv2.inRange(hsv_img,self.lower_colour, self.upper_colour)
-        #     res = cv2.bitwise_and(crop_img, crop_img, mask = mask)
-
-        #     if cv2.countNonZero(mask) > 0:
-        #         self.start_zone = self.start_zone_colours[i]
-        #         break
-        
         try:
             self.cv_img = self.cvbridge.imgmsg_to_cv2(img_data, desired_encoding="bgr8")
         except CvBridgeError as e:
@@ -286,58 +251,67 @@ class Task4:
     def main_loop(self):
         r = rospy.Rate(10)
         while not rospy.is_shutdown():
-            if self.colour == "none":
+            if self.colour == "no":
+                rospy.sleep(1)
                 self.vel.linear.x = 0.0
-                self.vel.angular.z = 0.2
+                self.vel.angular.z = 2.0
                 self.pub.publish(self.vel)
-                self.detect_colour(self.cv_img, self.colour_array[0], self.colour_array[1])
-                if self.colour_found:
-                    self.colour = self.start_zone_colours[0]
-                    self.lower_colour = self.colour_array[0]
-                    self.upper_colour = self.colour_array[1]
-                self.detect_colour(self.cv_img, self.colour_array[2], self.colour_array[3])
-                if self.colour_found:
-                    self.colour = self.start_zone_colours[1]
-                    self.lower_colour = self.colour_array[2]
-                    self.upper_colour = self.colour_array[3]
-                self.detect_colour(self.cv_img, self.colour_array[4], self.colour_array[5])
-                if self.colour_found:
-                    self.colour = self.start_zone_colours[2]
-                    self.lower_colour = self.colour_array[4]
-                    self.upper_colour = self.colour_array[5]
-                self.detect_colour(self.cv_img, self.colour_array[6], self.colour_array[7])
-                if self.colour_found:
-                    self.colour = self.start_zone_colours[3]
-                    self.lower_colour = self.colour_array[6]
-                    self.upper_colour = self.colour_array[7]
-                self.detect_colour(self.cv_img, self.colour_array[8], self.colour_array[9])
-                if self.colour_found:
-                    self.colour = self.start_zone_colours[4]
-                    self.lower_colour = self.colour_array[8]
-                    self.upper_colour = self.colour_array[9]
-                self.detect_colour(self.cv_img, self.colour_array[10], self.colour_array[11])
-                if self.colour_found:
-                    self.colour = self.start_zone_colours[5]
-                    self.lower_colour = self.colour_array[10]
-                    self.upper_colour = self.colour_array[11]
-                
+                rospy.sleep(2)
+                while(self.colour == "no"):
+                    if self.detect_colour(self.cv_img, self.blue_lower, self.blue_upper) == True:
+                        self.colour = self.start_zone_colours[0]
+                        self.lower_colour = self.blue_lower
+                        self.upper_colour = self.blue_upper
+                    if self.detect_colour(self.cv_img, self.red_lower, self.red_upper) == True:
+                        self.colour = self.start_zone_colours[1]
+                        self.lower_colour = self.red_lower
+                        self.upper_colour = self.red_upper
+                    if self.detect_colour(self.cv_img, self.yellow_lower, self.yellow_upper) == True:
+                        self.colour = self.start_zone_colours[2]
+                        self.lower_colour = self.yellow_lower
+                        self.upper_colour = self.yellow_upper
+                    if self.detect_colour(self.cv_img, self.green_lower, self.green_upper) == True:
+                        self.colour = self.start_zone_colours[3]
+                        self.lower_colour = self.green_lower
+                        self.upper_colour = self.green_upper
+                    if self.detect_colour(self.cv_img, self.tur_lower, self.tur_upper) == True:
+                        self.colour = self.start_zone_colours[4]
+                        self.lower_colour = self.tur_lower
+                        self.upper_colour = self.tur_upper
+                    if self.detect_colour(self.cv_img, self.purple_lower, self.purple_upper) == True:
+                        self.colour = self.start_zone_colours[5]
+                        self.lower_colour = self.purple_lower
+                        self.upper_colour = self.purple_upper
+                    # print(self.colour)
                 print(f"SEARCH INITIATED: The target beacon colour is {self.colour}.")
-                
-                    
-            if self.colour != "none" and self.m00 > self.m00_min:
+                self.vel.linear.x = 0
+                self.vel.angular.z = -2.0
+                self.pub.publish(self.vel)
+                rospy.sleep(2.4)
                 self.vel = Twist()
                 self.pub.publish(self.vel)
-                print("TARGET DETECTED: Beaconing initiated.")
-                if self.absolute_front > 0.35:
-                    self.vel.linear.x = 0.2
-                    self.vel.angular.z = 0.0
-                    self.pub.publish(self.vel)
+                rospy.sleep(2)
+                    
+            if self.colour != "no" and self.m00 > self.m00_min:
+                self.vel = Twist()
+                self.pub.publish(self.vel)
+                if self.cy <=550:
+                    self.vel.angular.z = 0.3
+                elif self.cy >=570:
+                    self.vel.angular.z = -0.3
                 else:
-                    print("BEACONING COMPLETE: The robot has now stopped.")
-                    self.vel.linear.x = 0.0
                     self.vel.angular.z = 0.0
+                self.vel.linear.x = 0.2
+                self.pub.publish(self.vel)
+                rospy.sleep(0.1)
+                print("TARGET DETECTED: Beaconing initiated.")
+                
+                if self.absolute_front <= 0.59:
+                    print("BEACONING COMPLETE: The robot has now stopped.")
+                    self.vel = Twist()
                     self.pub.publish(self.vel)
                     self.shutdownhook()
+                    break
                     
             if self.absolute_front<0.45:
                 if self.absolute_left < 0.5 :
